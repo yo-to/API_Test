@@ -32,7 +32,7 @@ function connect() {
   //options.acceptAllDevices = true;
   options.filters = [
     {services: [LED_SERVICE_UUID]},
-    {namePrefix: "BBC micro:bit [potaz]"} // ← 利用する micro:bit が複数ある場合、別途、何らか追加対応が必要そう
+    {namePrefix: "BBC micro:bit"} // ← 利用する micro:bit が複数ある場合、別途、何らか追加対応が必要そう
   ];
 
   navigator.bluetooth.requestDevice(options)
