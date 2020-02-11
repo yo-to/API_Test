@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>シンプルなデモ</title>
+</head>
+
+<body>
+<input id="text" value="LEDの色を変えるよ"/>
+<button id="speak">音声合成</button>
+
+<script>
+// 情報元： https://app.codegrid.net/entry/2016-web-speech-api-1
+
+const connect = document.getElementById("speak");
+connect.addEventListener("click", speak);
+const text = document.getElementById("text");
+
+function speak(){
+  var uttr = new SpeechSynthesisUtterance();
+  uttr.text = text.value;
+  speechSynthesis.speak(uttr);
+};
+</script>
+
+
+</script>
+</body>
+</html>
