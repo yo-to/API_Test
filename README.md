@@ -9,5 +9,5 @@ API のテストを行うページを置くためのリポジトリ
 　https://yo-to.github.io/API_Test/WebAPI/test03_toio.html  
 　https://yo-to.github.io/API_Test/WebAPI/test04_WebSpeechAPI_SpeechSynthesis.html  
 　https://yo-to.github.io/API_Test/WebAPI/test05_toio_and_WebSpeechAPI_SpeechSynthesis.html  
-　https://yo-to.github.io/API_Test/WebAPI/test06_WebSpeechAPI_SpeechRecognition.html
- 
+　https://yo-to.github.io/API_Test/WebAPI/test06_WebSpeechAPI_SpeechRecognition.html  
+　https://yo-to.github.io/API_Test/WebAPI/test07_bulma_and_toio_and_WebSpeechAPI_SpeechSynthesis.html
