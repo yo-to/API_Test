@@ -173,20 +173,26 @@ async function init() {
             case 1:
                 console.log('1番'); // タンバリンの音
                 controlMotor(cube1, motor_buf_01);
+                controlMotor(cube3, motor_buf_02);
                 break;
             case 2:
                 console.log('2番'); // 銀ベルの音
                 controlMotor(cube2, motor_buf_01);
+                controlMotor(cube3, motor_buf_04);
                 break;
             case 3:
                 console.log('3番'); // 青白の卓上ベルを普通に鳴らしたとき
                 controlMotor(cube1, motor_buf_02);
                 controlMotor(cube2, motor_buf_02);
+                controlMotor(cube3, motor_buf_02);
+                controlMotor(cube4, motor_buf_02);
                 break;
             case 4:
                 console.log('4番'); // 青白の卓上ベルを連打して鳴らしたとき
                 controlMotor(cube1, motor_buf_03);
                 controlMotor(cube2, motor_buf_03);
+                controlMotor(cube3, motor_buf_03);
+                controlMotor(cube4, motor_buf_03);
                 break;
             default:
                 console.log('default');
