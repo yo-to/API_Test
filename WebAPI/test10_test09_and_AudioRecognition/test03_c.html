@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Bluetooth API や音声認識のテスト</title>
+<link rel="stylesheet" href="./bulma.min.css">
+</head>
+
+<body>
+  <section class="section">
+    <div class="container">
+      <h1 class="title">
+        操作用ボタン1
+      </h1>
+      <div class="buttons">
+        <button id="connect1" class="button is-success is-light">接続</button>
+        <button id="disconnect1" class="button is-danger is-light">切断</button>
+        <button id="light1"class="button is-info is-light">点灯</button>
+        <button id="motor1"class="button is-info is-light">モーター</button>
+      </div>
+    </div>
+</section>
+<section class="section">
+  <div class="container">
+    <h1 class="title">
+      操作用ボタン2
+    </h1>
+    <div class="buttons">
+      <button id="connect2" class="button is-success is-light">接続</button>
+      <button id="disconnect2" class="button is-danger is-light">切断</button>
+      <button id="light2"class="button is-info is-light">点灯</button>
+      <button id="motor2"class="button is-info is-light">モーター</button>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">
+      操作用ボタン3
+    </h1>
+    <div class="buttons">
+      <button id="connect3" class="button is-success is-light">接続</button>
+      <button id="disconnect3" class="button is-danger is-light">切断</button>
+      <button id="light3"class="button is-info is-light">点灯</button>
+      <button id="motor3"class="button is-info is-light">モーター</button>
+    </div>
+  </div>
+</section>
+<section class="section">
+<div class="container">
+  <h1 class="title">
+    操作用ボタン4
+  </h1>
+  <div class="buttons">
+    <button id="connect4" class="button is-success is-light">接続</button>
+    <button id="disconnect4" class="button is-danger is-light">切断</button>
+    <button id="light4"class="button is-info is-light">点灯</button>
+    <button id="motor4"class="button is-info is-light">モーター</button>
+  </div>
+</div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="buttons">
+      <button type="button" onclick="moveTest01()">動き1</button>
+      <button type="button" onclick="moveTest02()">動き2</button>
+      <button type="button" onclick="moveTest03()">動き3</button>
+      <button type="button" onclick="moveTest04()">動き4</button>
+      <button type="button" onclick="moveTest04()">動き5</button>
+      <button type="button" onclick="moveTest04()">動き6</button>
+  </div>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="buttons">
+      <button type="button" onclick="init()">Start</button>
+      <div id="label-container"></div>
+  </div>
+</section>
+
+<script src="./tf.min.js"></script>
+<script src="./speech-commands.min.js"></script>
+
+<script>
+// GitHub Pages で試すための URL ⇒ https://yo-to.github.io/API_Test/WebAPI/test10_test09_and_AudioRecognition/test02_c.html
+
+// 情報元1： https://qiita.com/tetunori_lego/items/0670587c06fa9e9faf52
+//          https://github.com/tetunori/MechanumWheelControlWebBluetooth
+// 情報元2： https://app.codegrid.net/entry/2016-web-speech-api-1
+// 情報元3： https://qiita.com/belq/items/10ec41f656e47ee2b540
+// 情報元4： http://jellyware.jp/kurage/bluejelly/multiple_connections.html
+
+const URL = "https://yo-to.github.io/ML_Model/tm_model_01/"; // Teachable Machine で作成した音用のモデル
+let count = 0;
+let indexMax = -1;
+
+// toio のモーターの仕様： https://toio.github.io/toio-spec/docs/ble_motor
+const motor_buf_01 = new Uint8Array([ 0x02, 0x01, 0x01, 0x0A, 0x02, 0x01, 0x0A, 0x32 ]);
+const motor_buf_02 = new Uint8Array([ 0x02, 0x01, 0x01, 0x14, 0x02, 0x02, 0x14, 0x32 ]);
+const motor_buf_03 = new Uint8Array([ 0x02, 0x01, 0x01, 0x50, 0x02, 0x02, 0x50, 0x32 ]);
+const motor_buf_04 = new Uint8Array([ 0x02, 0x01, 0x01, 0x14, 0x02, 0x02, 0x14, 0x32 ]);
+// 16進数との変換表メモ  http://www16.plala.or.jp/fm677/16hex.htm
+//   0:0x00  10:0x0A  20:0x14  30:0x1E  40:0x28
+//  50:0x32  60:0x3C  70:0x46  80:0x50  90:0x5A
+// 100:0x6E  120:0x78  140:0x8C  160:0xA0  180:0xB4
+// 200:0xC8  220:0xDC  240:0xF0  255:0xFF
+
+async function moveTest01() {
+  controlMotor(cube2, motor_buf_01);
+}
+async function moveTest02() {
+  controlMotor(cube2, motor_buf_02);
+}
+async function moveTest03() {
+  controlMotor(cube2, motor_buf_03);
+}
+async function moveTest04() {
+  controlMotor(cube2, motor_buf_04);
+}
+// 05・06 は未実装
+
+// この部分はモデルダウンロード時に提示されたサンプルそのまま
+// こちらが同じ内容 ⇒ https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/audio
+async function createModel() {
+    const checkpointURL = URL + "model.json"; // model topology
+    const metadataURL = URL + "metadata.json"; // model metadata
+    const recognizer = speechCommands.create(
+        "BROWSER_FFT", // fourier transform type, not useful to change
+        undefined, // speech commands vocabulary feature, not useful for your models
+        checkpointURL,
+        metadataURL);
+    await recognizer.ensureModelLoaded();
+    return recognizer;
+}
+
+// この部分はモデルダウンロード時に提示されたサンプルに手を加えている
+async function init() {
+    count = 0;
+
+    const recognizer = await createModel();
+    const classLabels = recognizer.wordLabels(); // get class labels
+    const labelContainer = document.getElementById("label-container");
+    for (let i = 0; i < classLabels.length; i++) {
+        labelContainer.appendChild(document.createElement("div"));
+    }
+    // listen() takes two arguments:
+    // 1. A callback function that is invoked anytime a word is recognized.
+    // 2. A configuration object with adjustable fields
+    recognizer.listen(result => {
+        const scores = result.scores; // probability of prediction for each class
+        // render the probability scores per class
+        for (let i = 0; i < classLabels.length; i++) {
+            const classPrediction = classLabels[i] + ": " + result.scores[i].toFixed(2);
+            labelContainer.childNodes[i].innerHTML = classPrediction;
+        }
+        console.log(count);
+        //console.log(...result.scores);
+        //console.log(Math.max(...result.scores));
+        //console.log(result.scores.indexOf(Math.max(...result.scores)));
+        indexMax = result.scores.indexOf(Math.max(...result.scores)); // スコアが最大のもののインデックスを取得
+        count += 1;
+        console.log(indexMax + '番'); // スコアが最大のもののインデックスをデバッグ用に出力
+        if (count > 0) { // toio を動かす処理を毎回実行するか、X回に1回だけ動作させるようにするかを設定
+            count = 0;
+
+            switch (indexMax) {
+            case 0:
+                console.log('0番'); // 背景雑音
+                break;
+            case 1:
+                console.log('1番'); // タンバリンの音
+                controlMotor(cube1, motor_buf_01);
+                break;
+            case 2:
+                console.log('2番'); // 銀ベルの音
+                controlMotor(cube2, motor_buf_01);
+                break;
+            case 3:
+                console.log('3番'); // 青白の卓上ベルを普通に鳴らしたとき
+                controlMotor(cube1, motor_buf_02);
+                controlMotor(cube2, motor_buf_02);
+                break;
+            case 4:
+                console.log('4番'); // 青白の卓上ベルを連打して鳴らしたとき
+                controlMotor(cube1, motor_buf_03);
+                controlMotor(cube2, motor_buf_03);
+                break;
+            default:
+                console.log('default');
+            }
+        } else {
+            ;
+        }
+    }, {
+        //この辺りはサンプルそのまま
+        includeSpectrogram: true, // in case listen should return result.spectrogram
+        probabilityThreshold: 0.75,
+        invokeCallbackOnNoiseAndUnknown: true,
+        overlapFactor: 0.50 // probably want between 0.5 and 0.75. More info in README
+    });
+    // Stop the recognition in 5 seconds.
+    // setTimeout(() => recognizer.stopListening(), 5000);
+}
+
+// 音声合成でしゃべるテキストを設定（Web Speech API の SpeechSynthesis インターフェイスを利用）
+const text1="接続したよ";
+const text2="LEDの色を変えるよ";
+const text3="切断したよ";
+const text4="動かすよ";
+
+// 情報元1のソースをそのまま
+const cube1 = {
+  device:undefined,
+  sever:undefined,
+  service:undefined,
+  motorChar:undefined,
+  lightChar:undefined
+};
+const cube2 = {
+  device:undefined,
+  sever:undefined,
+  service:undefined,
+  motorChar:undefined,
+  lightChar:undefined
+};
+const cube3 = {
+  device:undefined,
+  sever:undefined,
+  service:undefined,
+  motorChar:undefined,
+  lightChar:undefined
+};
+const cube4 = {
+  device:undefined,
+  sever:undefined,
+  service:undefined,
+  motorChar:undefined,
+  lightChar:undefined
+};
+
+// toio の LED やモーターを制御するための命令用
+const light_buf1 = new Uint8Array([ 0x03, 0x00, 0x01, 0x01, 0x00, 0xFF, 0x00 ]); // 仕様： https://toio.github.io/toio-spec/docs/ble_light
+const light_buf2 = new Uint8Array([ 0x03, 0x00, 0x01, 0x01, 0x00, 0x00, 0xFF ]);
+const motor_buf_a = new Uint8Array([ 0x02, 0x01, 0x01, 0x14, 0x02, 0x01, 0x14, 0x1A ]); // 仕様： https://toio.github.io/toio-spec/docs/ble_motor
+
+// ここからWebページ上のボタンと処理の紐付け
+const connect1 = document.getElementById("connect1");
+const disconnect1 = document.getElementById("disconnect1");
+const light1 = document.getElementById("light1");
+const motor1 = document.getElementById("motor1");
+
+connect1.addEventListener("click", function(){connectCube(cube1)}, false);
+disconnect1.addEventListener("click", function(){disconnectCube(cube1)}, false);
+light1.addEventListener("click", function(){controlLight(cube1, light_buf1)}, false);
+motor1.addEventListener("click", function(){controlMotor(cube1, motor_buf_a)}, false);
+
+const connect2 = document.getElementById("connect2");
+const disconnect2 = document.getElementById("disconnect2");
+const light2 = document.getElementById("light2");
+const motor2 = document.getElementById("motor2");
+
+connect2.addEventListener("click", function(){connectCube(cube2)}, false);
+disconnect2.addEventListener("click", function(){disconnectCube(cube2)}, false);
+light2.addEventListener("click", function(){controlLight(cube2, light_buf2)}, false);
+motor2.addEventListener("click", function(){controlMotor(cube2, motor_buf_a)}, false);
+
+// ここからWebページ上のボタンと処理の紐付け（追加分）
+const connect3 = document.getElementById("connect3");
+const disconnect3 = document.getElementById("disconnect3");
+const light3 = document.getElementById("light3");
+const motor3 = document.getElementById("motor3");
+
+connect3.addEventListener("click", function(){connectCube(cube3)}, false);
+disconnect3.addEventListener("click", function(){disconnectCube(cube3)}, false);
+light3.addEventListener("click", function(){controlLight(cube3, light_buf1)}, false);
+motor3.addEventListener("click", function(){controlMotor(cube3, motor_buf_a)}, false);
+
+const connect4 = document.getElementById("connect4");
+const disconnect4 = document.getElementById("disconnect4");
+const light4 = document.getElementById("light4");
+const motor4 = document.getElementById("motor4");
+
+connect4.addEventListener("click", function(){connectCube(cube4)}, false);
+disconnect4.addEventListener("click", function(){disconnectCube(cube4)}, false);
+light4.addEventListener("click", function(){controlLight(cube4, light_buf2)}, false);
+motor4.addEventListener("click", function(){controlMotor(cube4, motor_buf_a)}, false);
+
+// BLE通信用
+const TOIO_SERVICE_UUID         = '10b20100-5b3b-4571-9508-cf3efcd7bbae'; // 仕様： https://toio.github.io/toio-spec/docs/ble_communication_overview
+const LIGHT_CHARCTERISTICS_UUID = '10b20103-5b3b-4571-9508-cf3efcd7bbae'; // 仕様： https://toio.github.io/toio-spec/docs/ble_light
+const MOTOR_CHARCTERISTICS_UUID = '10b20102-5b3b-4571-9508-cf3efcd7bbae'; // 仕様： https://toio.github.io/toio-spec/docs/ble_motor
+
+// 情報元1の内容、ほぼそのまま
+function connectCube(cube) {
+  // Scan only toio Core Cubes
+  const options = {
+      filters: [
+          { services: [ TOIO_SERVICE_UUID ] },
+          //{namePrefix: "toio"}
+      ],
+  };
+  navigator.bluetooth.requestDevice(options)
+  .then(device => {
+    cube.device = device;
+    console.log("device", device);
+    return device.gatt.connect();
+  })
+  .then(server =>{
+    cube.server = server;
+    console.log("server", server);
+    return server.getPrimaryService(TOIO_SERVICE_UUID);
+  })
+  .then(service => {
+    cube.service = service;
+    console.log("service", service);
+    return cube.service.getCharacteristic(LIGHT_CHARCTERISTICS_UUID);
+  })
+  .then(characteristic => {
+    cube.lightChar = characteristic;
+    console.log("characteristic", characteristic);
+    return cube.service.getCharacteristic(MOTOR_CHARCTERISTICS_UUID);
+  })
+  .then(characteristic => {
+    cube.motorChar = characteristic;
+    console.log("characteristic", characteristic);
+    speak(text1);
+  })
+  .catch(error => {
+    console.log(error);
+  });
+}
+
+// toio を動かす部分は、処理の都合で音声合成をコメントアウト
+function controlLight(cube, buf) {
+  if( ( cube !== undefined ) && ( cube.lightChar !== undefined ) ){
+        cube.lightChar.writeValue( buf );
+        //speak(text2);
+  }
+}
+function controlMotor(cube, buf) {
+  if( ( cube !== undefined ) && ( cube.motorChar !== undefined ) ){
+        cube.motorChar.writeValue( buf );
+        //speak(text4);
+  }
+}
+
+function disconnectCube(cube) {
+  if (!cube.device || !cube.device.gatt.connected) return ;
+  cube.device.gatt.disconnect();
+  speak(text3);
+  //alert("BLE： 切断完了")
+}
+
+// 音声合成の処理（Web Speech API の SpeechSynthesis インターフェイスを利用）
+function speak(text){
+  var uttr = new SpeechSynthesisUtterance();
+  uttr.text = text;
+  speechSynthesis.speak(uttr);
+};
+</script>
+</body>
+</html>
