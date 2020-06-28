@@ -8,4 +8,4 @@ API のテストを行うページを置くためのリポジトリ
 ### NFC利用
 　https://yo-to.github.io/API_Test/WebAPI/test11_WebNFC/
 ### Leap Motion
-　https://yo-to.github.io/API_Test/WebAPI/test12_leapjs/
+　https://yo-to.github.io/API_Test/WebAPI/test12_leapjs/examples/dumper.html
